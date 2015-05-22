@@ -1,7 +1,7 @@
 Practical Machine Learning Project 
 ==================================================================
 
-Link to the page: [click here](http://sanketachari.github.io/Practical_Machine_Learning/)
+Link to the Project Report: [click here](http://sanketachari.github.io/Practical_Machine_Learning/)
 
 ### Assignment  
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about 
