@@ -1,0 +1,109 @@
+---
+title: "Prediction of exercise pattern"
+author: "Sanket Achari"
+date: "May 21, 2015"
+output: html_document
+---
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+For the model design & prediction following variables are considered.
+roll, pitch, yaw & x,y,z components of gyro, accelerometer, magnet and total accel
+
+## Read training & testing data sets
+```{r,warning=FALSE, message=FALSE}
+library(caret)
+library(rpart)
+library(rattle); library(rpart.plot)
+
+raw_train <- read.csv("pml-training.csv", header = T, na.strings = c("NA","#DIV/0!"),
+                stringsAsFactors = F)
+
+raw_test <- read.csv("pml-testing.csv", header = T, na.strings = c("NA","#DIV/0!"),
+                stringsAsFactors = F)
+
+raw_train$classe <- as.factor(raw_train$classe)
+```
+
+## Partitioning training dataset into trainData & testData
+
+```{r}
+set.seed(423)
+inTrain <- createDataPartition(y = raw_train$classe, p = 0.5, list = FALSE)
+trainData <- raw_train[inTrain,]
+testData <- raw_train[-inTrain,]
+
+dim(trainData)
+dim(testData)
+```
+
+## Cleaning training & testing dataset
+```{r}
+pattern <- "^roll|^pitch|^yaw|^total_accel|^gyros|^accel_|^magnet_|classe"
+train_Data <- trainData[,grep(pattern = pattern, colnames(trainData))]
+test_Data <- testData[,grep(pattern = pattern, colnames(testData))]
+```
+
+## Using Random Forest Algorithm for Prediction
+
+```{r, cache=TRUE}
+set.seed(234)
+modfit <- train(classe ~ ., data = train_Data, trControl = trainControl(method = "cv", 4),  method = "rf")
+
+pred_classe <- predict(modfit,test_Data)
+```
+
+## Confusion Matrix to test results
+
+```{r}
+confusionMatrix(pred_classe, test_Data$classe)
+```
+
+## Out of Sample Error
+
+After prediction on testing dataset using random Forest model out of sample error is
+ 1 - Accuracy = 1 - 0.9912 = 0.0088
+
+## Using Recursive Partitioning Algorithm 
+
+```{r, cache=TRUE}
+treemodel <- rpart(classe ~ ., data = train_Data, method = "class")
+
+```
+
+## Fancy plot of decision tree
+
+```{r, cache = TRUE}
+fancyRpartPlot(treemodel)
+```
+
+
+
+## Solution for 20 test cases
+
+Cleaning testing dataset
+```{r}
+pattern <- "^roll|^pitch|^yaw|^total_accel|^gyros|^accel_|^magnet_"
+raw_Data <- raw_test[,grep(pattern = pattern, colnames(raw_test))]
+
+```
+
+Predicting class for each observation
+```{r, cache=TRUE}
+pred_class <- predict(modfit, raw_Data)
+
+```
+Function to generate files for the submission of solution of 20 test cases
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(pred_class)
+```
+
+
